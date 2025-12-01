@@ -1,24 +1,3 @@
--- MIT License
--- 
--- Copyright (c) 2025 GAI.DEV
--- 
--- Permission is hereby granted, free of charge, to any person obtaining a copy
--- of this software and associated documentation files (the "Software"), to deal
--- in the Software without restriction, including without limitation the rights
--- to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
--- copies of the Software, and to permit persons to whom the Software is
--- furnished to do so, subject to the following conditions:
--- 
--- The above copyright notice and this permission notice shall be included in all
--- copies or substantial portions of the Software.
--- 
--- THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
--- IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
--- FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
--- AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
--- LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
--- OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
--- SOFTWARE.
 local RG = {}
 
 if _ENV == nil then
@@ -43,16 +22,10 @@ end
 local function eval_value(s)
     s = trim(s)
     local long = s:match("^%[%[(.-)%]%]$")
-    if long then
-        return long
-    end
+    if long then return long end
     local str = s:match('^"(.-)"$')
-    if str then
-        return str
-    end
-    if s:match("^%$") then
-        return _G[s:sub(2)]
-    end
+    if str then return str end
+    if s:match("^%$") then return _G[s:sub(2)] end
     if s == "true" then return true end
     if s == "false" then return false end
     if s:match("^%-?%d+$") or s:match("^%-?%d+%.%d+$") then
@@ -84,6 +57,14 @@ local function split_first(line)
     return a, b
 end
 
+local function split_args(s)
+    local args = {}
+    for token in s:gmatch("%S+") do
+        args[#args+1] = eval_value(token)
+    end
+    return table.unpack(args)
+end
+
 function RGLoad(code)
     local lines = {}
     for line in code:gmatch("[^\n]+") do
@@ -100,8 +81,8 @@ function RGLoad(code)
                     local name, val = rest:match("^(%S+)%s+(.+)$")
                     RG.Def(name, eval_value(val))
                 elseif cmd == "CALL" then
-                    local fname, arg = rest:match("^(%S+)%s+(.+)$")
-                    RG.Call(fname, eval_value(arg))
+                    local fname, args = rest:match("^(%S+)%s*(.*)$")
+                    RG.Call(fname, split_args(args))
                 elseif cmd == "IF" then
                     local j = i + 1
                     local matched = false
